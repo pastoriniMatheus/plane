@@ -12,6 +12,9 @@ from .configuration import (
 )
 
 
+from .llm import InstanceLLMModelsEndpoint
+
+
 from .admin import (
     InstanceAdminEndpoint,
     InstanceAdminSignInEndpoint,
