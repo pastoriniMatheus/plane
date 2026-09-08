@@ -4,6 +4,7 @@
 
 # Python imports
 import json
+import logging
 import uuid
 
 # Django imports
@@ -103,6 +104,11 @@ class IssueAttachmentV2Endpoint(BaseAPIView):
         size = int(request.data.get("size", settings.FILE_SIZE_LIMIT))
 
         if not type or type not in settings.ATTACHMENT_MIME_TYPES:
+            # Log the rejected type: without it an operator cannot tell which
+            # MIME type to add to ATTACHMENT_EXTRA_MIME_TYPES.
+            logging.getLogger("plane.api.request").warning(
+                "Attachment rejected: name=%s type=%r not in ATTACHMENT_MIME_TYPES", name, type
+            )
             return Response(
                 {"error": "Invalid file type.", "status": False},
                 status=status.HTTP_400_BAD_REQUEST,

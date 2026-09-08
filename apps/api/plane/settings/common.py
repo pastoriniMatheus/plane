@@ -544,6 +544,14 @@ ATTACHMENT_MIME_TYPES = [
     "text/markdown",
 ]
 
+# Extra attachment MIME types allowed by the operator, comma-separated.
+# The list above is upstream's; this hook lets a self-hosted instance accept
+# additional types without editing code. Example:
+#   ATTACHMENT_EXTRA_MIME_TYPES="image/heic,application/x-yaml"
+ATTACHMENT_MIME_TYPES += [
+    mime.strip() for mime in os.environ.get("ATTACHMENT_EXTRA_MIME_TYPES", "").split(",") if mime.strip()
+]
+
 # MIME types that browsers can execute as scripts when served inline.
 # These must always be served with Content-Disposition: attachment, even if they
 # somehow end up stored (e.g. uploaded before this restriction was added).
