@@ -40,6 +40,11 @@ def test_filter_chat_models_openai_keeps_chat_only():
 
 
 @pytest.mark.unit
+def test_filter_chat_models_openai_keeps_search_preview_chat_model():
+    assert "gpt-4o-search-preview" in lp.filter_chat_models("openai", ["gpt-4o-search-preview"])
+
+
+@pytest.mark.unit
 def test_filter_chat_models_anthropic_keeps_claude():
     assert lp.filter_chat_models("anthropic", ["claude-sonnet-4-5", "other"]) == ["claude-sonnet-4-5"]
 
@@ -62,7 +67,12 @@ def test_list_models_gemini_uses_openai_client_with_base_url():
     ]
     with patch.object(lp, "OpenAI", return_value=fake_client) as ctor:
         models = lp.list_models("gemini", "key-1")
-    ctor.assert_called_once_with(api_key="key-1", base_url=lp.PROVIDERS["gemini"]["base_url"])
+    ctor.assert_called_once_with(
+        api_key="key-1",
+        base_url=lp.PROVIDERS["gemini"]["base_url"],
+        timeout=lp.REQUEST_TIMEOUT,
+        max_retries=1,
+    )
     assert models == ["gemini-2.5-flash", "gemini-2.5-pro"]
 
 

@@ -25,10 +25,28 @@ type IInstanceAIForm = {
 
 type AIFormValues = Record<TInstanceAIConfigurationKeys, string>;
 
-const LLM_PROVIDER_OPTIONS: Record<TLLMProvider, { label: string; keyUrl: string; placeholder: string }> = {
-  openai: { label: "OpenAI", keyUrl: "https://platform.openai.com/api-keys", placeholder: "sk-..." },
-  gemini: { label: "Google Gemini", keyUrl: "https://aistudio.google.com/apikey", placeholder: "AIza..." },
-  anthropic: { label: "Anthropic", keyUrl: "https://console.anthropic.com/settings/keys", placeholder: "sk-ant-..." },
+const LLM_PROVIDER_OPTIONS: Record<
+  TLLMProvider,
+  { label: string; keyUrl: string; placeholder: string; defaultModel: string }
+> = {
+  openai: {
+    label: "OpenAI",
+    keyUrl: "https://platform.openai.com/api-keys",
+    placeholder: "sk-...",
+    defaultModel: "gpt-4o-mini",
+  },
+  gemini: {
+    label: "Google Gemini",
+    keyUrl: "https://aistudio.google.com/apikey",
+    placeholder: "AIza...",
+    defaultModel: "gemini-flash-latest",
+  },
+  anthropic: {
+    label: "Anthropic",
+    keyUrl: "https://console.anthropic.com/settings/keys",
+    placeholder: "sk-ant-...",
+    defaultModel: "claude-sonnet-4-5",
+  },
 };
 
 const isProvider = (value: string): value is TLLMProvider => value in LLM_PROVIDER_OPTIONS;
@@ -70,6 +88,7 @@ export function InstanceAIForm(props: IInstanceAIForm) {
     setValue("LLM_PROVIDER", value, { shouldDirty: true });
     setModels([]);
     setValue("LLM_MODEL", "", { shouldDirty: true });
+    setValue("LLM_API_KEY", "", { shouldDirty: true });
   };
 
   const handleLoadModels = async () => {
@@ -81,7 +100,10 @@ export function InstanceAIForm(props: IInstanceAIForm) {
       if (response.models.length === 0) {
         setToast({ type: TOAST_TYPE.WARNING, title: "No models", message: "The provider returned no chat models." });
       } else if (!response.models.includes(currentModel ?? "")) {
-        setValue("LLM_MODEL", response.models[0], { shouldDirty: true });
+        const defaultModel = providerMeta.defaultModel;
+        setValue("LLM_MODEL", response.models.includes(defaultModel) ? defaultModel : response.models[0], {
+          shouldDirty: true,
+        });
       }
     } catch (err) {
       const message = (err as { error?: string } | undefined)?.error ?? "Could not load models. Check the API key.";

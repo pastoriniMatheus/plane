@@ -11,7 +11,7 @@ from plane.utils.llm_providers import LLMProviderError
 
 
 def _cfg(values):
-    """Simula get_configuration_value devolvendo (api_key, provider, model)."""
+    """Simulates get_configuration_value returning (api_key, provider, model)."""
     return patch.object(ext, "get_configuration_value", return_value=values)
 
 
@@ -44,7 +44,8 @@ def test_get_llm_response_delegates_to_chat():
 
 @pytest.mark.unit
 def test_get_llm_response_returns_error_message():
-    with patch.object(ext, "chat", side_effect=LLMProviderError("Invalid API key for gemini")), patch.object(
-        ext, "log_exception"
+    with (
+        patch.object(ext, "chat", side_effect=LLMProviderError("Invalid API key for gemini")),
+        patch.object(ext, "log_exception"),
     ):
         assert ext.get_llm_response("t", "p", "k", "m", "gemini") == (None, "Invalid API key for gemini")

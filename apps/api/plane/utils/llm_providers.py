@@ -2,11 +2,11 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 # See the LICENSE file for details.
 
-"""Provedores de LLM suportados pela instância (OpenAI, Gemini, Anthropic).
+"""LLM providers supported by the instance (OpenAI, Gemini, Anthropic).
 
-Gemini e Anthropic expõem endpoints compatíveis com a API da OpenAI, por isso o
-SDK ``openai`` é usado para os três, mudando apenas ``base_url``. A listagem de
-modelos da Anthropic usa o endpoint nativo porque a camada compatível não a expõe.
+Gemini and Anthropic expose endpoints compatible with the OpenAI API, so the
+``openai`` SDK is used for all three, only changing ``base_url``. Listing
+Anthropic models uses the native endpoint because the compatible layer does not expose it.
 """
 
 from typing import List
@@ -51,7 +51,6 @@ _NON_CHAT_MARKERS = (
     "veo",
     "dall-e",
     "moderation",
-    "search",
     "instruct",
     "live",
     "robotics",
@@ -77,7 +76,7 @@ def _client(provider: str, api_key: str) -> OpenAI:
     cfg = _config(provider)
     if not api_key:
         raise LLMProviderError(f"Missing API key for provider: {cfg['name']}")
-    return OpenAI(api_key=api_key, base_url=cfg["base_url"])
+    return OpenAI(api_key=api_key, base_url=cfg["base_url"], timeout=REQUEST_TIMEOUT, max_retries=1)
 
 
 def _map_error(provider: str, exc: Exception) -> LLMProviderError:
@@ -90,13 +89,13 @@ def _map_error(provider: str, exc: Exception) -> LLMProviderError:
 
 
 def filter_chat_models(provider: str, model_ids: List[str]) -> List[str]:
-    """Mantém só modelos de chat, remove prefixo ``models/`` (Gemini) e ordena."""
+    """Keeps only chat models, strips the ``models/`` prefix (Gemini) and sorts."""
     provider = (provider or "").lower()
     out = set()
     for raw in model_ids:
         mid = (raw or "").strip()
         if mid.startswith("models/"):
-            mid = mid[len("models/"):]
+            mid = mid[len("models/") :]
         low = mid.lower()
         if not mid or any(m in low for m in _NON_CHAT_MARKERS):
             continue
@@ -118,7 +117,7 @@ def list_models(provider: str, api_key: str) -> List[str]:
     try:
         if provider == "anthropic":
             resp = requests.get(
-                "https://api.anthropic.com/v1/models",
+                f"{cfg['base_url']}models",
                 headers={"x-api-key": api_key, "anthropic-version": ANTHROPIC_VERSION},
                 params={"limit": 100},
                 timeout=REQUEST_TIMEOUT,
@@ -133,16 +132,18 @@ def list_models(provider: str, api_key: str) -> List[str]:
             ids = [m.id for m in client.models.list()]
     except LLMProviderError:
         raise
-    except Exception as exc:  # noqa: BLE001 - qualquer falha do SDK/rede vira erro de provedor
+    except Exception as exc:  # noqa: BLE001 - any SDK/network failure becomes a provider error
         raise _map_error(provider, exc) from exc
     return filter_chat_models(provider, ids)
 
 
 def chat(provider: str, api_key: str, model: str, text: str) -> str:
     provider = (provider or "").lower()
-    client = _client(provider, api_key)
     try:
+        client = _client(provider, api_key)
         completion = client.chat.completions.create(model=model, messages=[{"role": "user", "content": text}])
+    except LLMProviderError:
+        raise
     except Exception as exc:  # noqa: BLE001
         raise _map_error(provider, exc) from exc
     content = completion.choices[0].message.content if completion.choices else None
