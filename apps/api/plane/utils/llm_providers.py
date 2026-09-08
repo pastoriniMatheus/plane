@@ -27,7 +27,7 @@ PROVIDERS = {
     "gemini": {
         "name": "Google Gemini",
         "base_url": "https://generativelanguage.googleapis.com/v1beta/openai/",
-        "default_model": "gemini-2.5-flash",
+        "default_model": "gemini-flash-latest",
         "key_url": "https://aistudio.google.com/apikey",
     },
     "anthropic": {

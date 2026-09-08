@@ -18,7 +18,7 @@ def _cfg(values):
 @pytest.mark.unit
 def test_get_llm_config_uses_provider_default_model_when_empty():
     with _cfg(("key", "gemini", None)):
-        assert ext.get_llm_config() == ("key", "gemini-2.5-flash", "gemini")
+        assert ext.get_llm_config() == ("key", "gemini-flash-latest", "gemini")
 
 
 @pytest.mark.unit
@@ -38,8 +38,8 @@ def test_get_llm_config_rejects_unknown_provider_or_missing_key():
 @pytest.mark.unit
 def test_get_llm_response_delegates_to_chat():
     with patch.object(ext, "chat", return_value="texto") as chat:
-        assert ext.get_llm_response("Resuma", "corpo", "k", "gemini-2.5-flash", "gemini") == ("texto", None)
-    chat.assert_called_once_with("gemini", "k", "gemini-2.5-flash", "Resuma\ncorpo")
+        assert ext.get_llm_response("Resuma", "corpo", "k", "gemini-flash-latest", "gemini") == ("texto", None)
+    chat.assert_called_once_with("gemini", "k", "gemini-flash-latest", "Resuma\ncorpo")
 
 
 @pytest.mark.unit
