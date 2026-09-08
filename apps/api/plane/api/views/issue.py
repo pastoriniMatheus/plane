@@ -4,6 +4,7 @@
 
 # Python imports
 import json
+import logging
 import uuid
 import re
 
@@ -87,6 +88,7 @@ from plane.utils.order_queryset import (
 )
 from plane.bgtasks.storage_metadata_task import get_asset_object_metadata
 from .base import BaseAPIView
+from plane.utils.attachment_mime import resolve_mime_type
 from plane.utils.host import base_host
 from plane.utils.issue_relation_mapper import get_actual_relation
 from plane.bgtasks.webhook_task import model_activity
@@ -1898,7 +1900,9 @@ class IssueAttachmentListCreateAPIEndpoint(BaseAPIView):
             )
 
         name = sanitize_filename(request.data.get("name"))
-        type = request.data.get("type", False)
+        # Browsers send an empty type for extensions they do not recognise;
+        # fall back to the file name so the allow-list can still decide.
+        type = resolve_mime_type(name, request.data.get("type", False))
         size = request.data.get("size")
         external_id = request.data.get("external_id")
         external_source = request.data.get("external_source")
@@ -1913,6 +1917,9 @@ class IssueAttachmentListCreateAPIEndpoint(BaseAPIView):
         size_limit = min(size, settings.FILE_SIZE_LIMIT)
 
         if not type or type not in settings.ATTACHMENT_MIME_TYPES:
+            logging.getLogger("plane.api.request").warning(
+                "Attachment rejected: name=%s type=%r not in ATTACHMENT_MIME_TYPES", name, type
+            )
             return Response(
                 {"error": "Invalid file type.", "status": False},
                 status=status.HTTP_400_BAD_REQUEST,
