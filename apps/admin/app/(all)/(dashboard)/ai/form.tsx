@@ -69,6 +69,7 @@ export function InstanceAIForm(props: IInstanceAIForm) {
   const handleProviderChange = (value: TLLMProvider) => {
     setValue("LLM_PROVIDER", value, { shouldDirty: true });
     setModels([]);
+    setValue("LLM_MODEL", "", { shouldDirty: true });
   };
 
   const handleLoadModels = async () => {
