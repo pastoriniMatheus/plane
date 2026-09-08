@@ -13,14 +13,14 @@ from plane.license.api.views import llm as llm_view
 from plane.utils.llm_providers import LLMProviderError
 
 
-def _post(body):
+def _post(body, permission_granted=True):
     request = APIRequestFactory().post("/api/instances/configurations/llm-models/", body, format="json")
     # O ambiente de teste unitário não tem Redis disponível. `BaseAPIView.initial()`
     # chama `check_throttles()` antes mesmo da checagem de permissão, o que exigiria
     # cache Redis via `AnonRateThrottle`. Como este é um teste unitário (sem infra),
     # o throttle é mockado da mesma forma que a permissão.
     with (
-        patch.object(InstanceAdminPermission, "has_permission", return_value=True),
+        patch.object(InstanceAdminPermission, "has_permission", return_value=permission_granted),
         patch.object(AnonRateThrottle, "allow_request", return_value=True),
     ):
         return llm_view.InstanceLLMModelsEndpoint.as_view()(request)
@@ -67,3 +67,11 @@ def test_requires_key_when_nothing_stored():
         resp = _post({"provider": "gemini", "api_key": ""})
     assert resp.status_code == 400
     assert "API key" in resp.data["error"]
+
+
+@pytest.mark.unit
+def test_rejects_non_admin_caller_without_contacting_provider():
+    with patch.object(llm_view, "list_models") as lm:
+        resp = _post({"provider": "gemini", "api_key": "k1"}, permission_granted=False)
+    assert resp.status_code in (401, 403)
+    assert not lm.called
