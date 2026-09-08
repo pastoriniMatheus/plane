@@ -12,6 +12,8 @@ import type {
   IInstanceAdmin,
   IInstanceConfiguration,
   IInstanceInfo,
+  TLLMModelsRequest,
+  TLLMModelsResponse,
   TPage,
 } from "@plane/types";
 // api service
@@ -107,6 +109,20 @@ export class InstanceService extends APIService {
    */
   async updateConfigurations(data: Partial<IFormattedInstanceConfiguration>): Promise<IInstanceConfiguration[]> {
     return this.patch("/api/instances/configurations/", data)
+      .then((response) => response?.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  /**
+   * Lists chat models available for a provider using the given (or stored) API key
+   * @param {TLLMModelsRequest} data provider and optional api_key
+   * @returns {Promise<TLLMModelsResponse>} provider and model ids
+   * @throws {Error} If the request fails (invalid key, unsupported provider, network)
+   */
+  async listLLMModels(data: TLLMModelsRequest): Promise<TLLMModelsResponse> {
+    return this.post("/api/instances/configurations/llm-models/", data)
       .then((response) => response?.data)
       .catch((error) => {
         throw error?.response?.data;

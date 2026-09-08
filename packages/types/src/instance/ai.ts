@@ -4,4 +4,16 @@
  * See the LICENSE file for details.
  */
 
-export type TInstanceAIConfigurationKeys = "LLM_API_KEY" | "LLM_MODEL";
+export type TInstanceAIConfigurationKeys = "LLM_API_KEY" | "LLM_MODEL" | "LLM_PROVIDER";
+
+export type TLLMProvider = "openai" | "gemini" | "anthropic";
+
+export type TLLMModelsRequest = {
+  provider: TLLMProvider;
+  api_key?: string;
+};
+
+export type TLLMModelsResponse = {
+  provider: TLLMProvider;
+  models: string[];
+};
